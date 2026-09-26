@@ -1,6 +1,7 @@
 package tn.esprit.autoloc_api.domain;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +10,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 @Entity
-//@Table(name = "vehicule")
+@Table(name = "vehicule")
 @Getter
 @Setter
 @NoArgsConstructor
