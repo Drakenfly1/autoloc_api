@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Table(name = "reservation")
@@ -29,4 +30,13 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StatutReservation statut;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    Client client;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    Vehicule vehicule;
+
+    @OneToOne
+    private Contrat contrat;
 }
