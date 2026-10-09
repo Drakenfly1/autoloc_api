@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.Set;
 
 @Entity
 @Table(name = "reservation")
@@ -32,10 +31,10 @@ public class Reservation {
     private StatutReservation statut;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    Client client;
+    private Client client;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    Vehicule vehicule;
+    private Vehicule vehicule;
 
     @OneToOne
     private Contrat contrat;

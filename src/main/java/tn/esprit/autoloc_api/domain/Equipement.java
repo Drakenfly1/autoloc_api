@@ -23,6 +23,6 @@ public class Equipement {
     @Column(nullable = false, length = 100)
     private String libelle;
 
-    @ManyToMany(cascade = CascadeType.MERGE)
+    @ManyToMany(mappedBy = "equipements")
     private Set<Vehicule> vehicule;
 }

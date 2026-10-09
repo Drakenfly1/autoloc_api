@@ -40,5 +40,5 @@ public class Client {
     private LocalDate dateInscription;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "client")
-    private Set<Reservation> Reservations;
+    private Set<Reservation> reservations;
 }

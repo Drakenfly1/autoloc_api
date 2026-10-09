@@ -29,5 +29,5 @@ public class Employe {
     private RoleEmploye role;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    Agence agence;
+    private Agence agence;
 }

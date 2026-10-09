@@ -43,11 +43,11 @@ public class Vehicule {
     private StatusVehicule statut;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    Agence agence;
+    private Agence agence;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "vehicule")
-    private Set<Reservation> Reservations;
+    private Set<Reservation> reservations;
 
-    @ManyToMany(cascade = CascadeType.MERGE, mappedBy = "vehicule")
+    @ManyToMany(cascade = CascadeType.MERGE)
     private Set<Equipement> equipements;
 }

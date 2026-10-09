@@ -29,8 +29,8 @@ public class Agence {
     private String telephone;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "agence")
-    private Set<Employe> Employes;
+    private Set<Employe> employes;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "agence")
-    private Set<Vehicule> Vehicules;
+    private Set<Vehicule> vehicules;
 }
