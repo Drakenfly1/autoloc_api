@@ -8,7 +8,6 @@ import tn.esprit.autoloc_api.repository.IContratRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.List.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +38,7 @@ public class ContratServiceImpl implements IContratService {
     public Contrat findById(Long id) {
         return contratRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Not found Contrat")
+                        new ResourceNotFoundException("Contrat", id)
                 );
     }
 
