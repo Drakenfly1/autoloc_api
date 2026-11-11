@@ -1,10 +1,18 @@
+
 package tn.esprit.autoloc_api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import tn.esprit.autoloc_api.domain.Maintenance;
+import tn.esprit.autoloc_api.domain.Vehicule;
 import tn.esprit.autoloc_api.exception.ResourceNotFoundException;
+import tn.esprit.autoloc_api.mapper.MaintenanceMapper;
 import tn.esprit.autoloc_api.repository.IMaintenanceRepositorty;
+import tn.esprit.autoloc_api.repository.IVehiculeRepository;
+import tn.esprit.autoloc_api.web.dto.MaintenanceRequestDTO;
+import tn.esprit.autoloc_api.web.dto.MaintenanceResponseDTO;
 
 import java.util.List;
 
@@ -13,47 +21,65 @@ import java.util.List;
 public class MaintenanceServiceImpl implements IMaintenanceService {
 
     private final IMaintenanceRepositorty maintenanceRepository;
+    private final IVehiculeRepository vehiculeRepository;
+    private final MaintenanceMapper maintenanceMapper;
 
     @Override
-    public Maintenance create(Maintenance maintenance) {
-        if (maintenance.getIdMaintenance() != null) {
-            throw new IllegalArgumentException(
-                    "Une nouvelle maintenance ne doit pas avoir d'identifiant");
-        }
+    @Transactional
+    public MaintenanceResponseDTO create(MaintenanceRequestDTO dto) {
 
-        verifierMaintenance(maintenance);
+        verifierDates(dto);
 
-        return maintenanceRepository.save(maintenance);
+        Maintenance maintenance = maintenanceMapper.toEntity(dto);
+
+        maintenance.setVehicule(trouverVehicule(dto.idVehicule()));
+
+        Maintenance saved = maintenanceRepository.save(maintenance);
+
+        return maintenanceMapper.toDTO(saved);
     }
 
     @Override
-    public Maintenance findById(Long id) {
-        return maintenanceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Maintenance", id));
+    @Transactional(readOnly = true)
+    public MaintenanceResponseDTO findById(Long id) {
+
+        Maintenance maintenance = rechercherMaintenance(id);
+
+        return maintenanceMapper.toDTO(maintenance);
     }
 
     @Override
-    public List<Maintenance> findAll() {
-        return maintenanceRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<MaintenanceResponseDTO> findAll() {
+
+        return maintenanceRepository.findAll()
+                .stream()
+                .map(maintenanceMapper::toDTO)
+                .toList();
     }
 
     @Override
-    public Maintenance update(Long id, Maintenance maintenance) {
-        Maintenance existante = findById(id);
+    @Transactional
+    public MaintenanceResponseDTO update(
+            Long id, MaintenanceRequestDTO dto) {
 
-        verifierMaintenance(maintenance);
+        Maintenance existante = rechercherMaintenance(id);
 
-        existante.setDateDebut(maintenance.getDateDebut());
-        existante.setDateFin(maintenance.getDateFin());
-        existante.setDescription(maintenance.getDescription());
-        existante.setVehicule(maintenance.getVehicule());
+        verifierDates(dto);
 
-        return maintenanceRepository.save(existante);
+        existante.setDateDebut(dto.dateDebut());
+        existante.setDateFin(dto.dateFin());
+        existante.setDescription(dto.description());
+        existante.setVehicule(trouverVehicule(dto.idVehicule()));
+
+        Maintenance updated = maintenanceRepository.save(existante);
+
+        return maintenanceMapper.toDTO(updated);
     }
 
     @Override
     public void deleteById(Long id) {
+
         if (!maintenanceRepository.existsById(id)) {
             throw new ResourceNotFoundException("Maintenance", id);
         }
@@ -61,18 +87,40 @@ public class MaintenanceServiceImpl implements IMaintenanceService {
         maintenanceRepository.deleteById(id);
     }
 
-    private void verifierMaintenance(Maintenance maintenance) {
-        if (maintenance.getDateDebut() == null) {
-            throw new IllegalArgumentException(
-                    "La date de début de maintenance est obligatoire");
+    private Maintenance rechercherMaintenance(Long id) {
+
+        return maintenanceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Maintenance", id)
+                );
+    }
+
+    private Vehicule trouverVehicule(Long idVehicule) {
+
+        if (idVehicule == null) {
+            return null;
         }
 
-        if (maintenance.getDateFin() != null
-                && maintenance.getDateFin()
-                .isBefore(maintenance.getDateDebut())) {
+        return vehiculeRepository.findById(idVehicule)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Véhicule", idVehicule)
+                );
+    }
+
+    private void verifierDates(MaintenanceRequestDTO dto) {
+
+        if (dto.dateDebut() == null) {
+            throw new IllegalArgumentException(
+                    "La date de début de maintenance est obligatoire"
+            );
+        }
+
+        if (dto.dateFin() != null
+                && dto.dateFin().isBefore(dto.dateDebut())) {
 
             throw new IllegalArgumentException(
-                    "La date de fin ne peut pas être antérieure à la date de début");
+                    "La date de fin ne peut pas être antérieure à la date de début"
+            );
         }
     }
 }

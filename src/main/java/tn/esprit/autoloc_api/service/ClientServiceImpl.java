@@ -1,10 +1,15 @@
+
 package tn.esprit.autoloc_api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import tn.esprit.autoloc_api.domain.Client;
 import tn.esprit.autoloc_api.exception.ResourceNotFoundException;
+import tn.esprit.autoloc_api.mapper.ClientMapper;
 import tn.esprit.autoloc_api.repository.IClientRepository;
+import tn.esprit.autoloc_api.web.dto.ClientRequestDTO;
+import tn.esprit.autoloc_api.web.dto.ClientResponseDTO;
 
 import java.util.List;
 
@@ -13,81 +18,66 @@ import java.util.List;
 public class ClientServiceImpl implements IClientService {
 
     private final IClientRepository clientRepository;
+    private final ClientMapper clientMapper;
 
     @Override
-    public Client create(Client client) {
-        if (client.getIdClient() != null) {
-            throw new IllegalArgumentException(
-                    "Un nouveau client ne doit pas avoir d'identifiant");
-        }
+    public ClientResponseDTO create(ClientRequestDTO dto) {
 
-        verifierClient(client);
+        Client client = clientMapper.toEntity(dto);
 
-        return clientRepository.save(client);
+        Client saved = clientRepository.save(client);
+
+        return clientMapper.toDTO(saved);
     }
 
     @Override
-    public Client findById(Long id) {
-        return clientRepository.findById(id)
+    public ClientResponseDTO findById(Long id) {
+
+        Client client = clientRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Client", id));
+                        new ResourceNotFoundException("Client", id)
+                );
+
+        return clientMapper.toDTO(client);
     }
 
     @Override
-    public List<Client> findAll() {
-        return clientRepository.findAll();
+    public List<ClientResponseDTO> findAll() {
+
+        return clientRepository.findAll()
+                .stream()
+                .map(clientMapper::toDTO)
+                .toList();
     }
 
     @Override
-    public Client update(Long id, Client client) {
-        Client existant = findById(id);
+    public ClientResponseDTO update(
+            Long id, ClientRequestDTO dto) {
 
-        verifierClient(client);
+        Client existant = clientRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client", id)
+                );
 
-        existant.setNom(client.getNom());
-        existant.setPrenom(client.getPrenom());
-        existant.setEmail(client.getEmail());
-        existant.setTelephone(client.getTelephone());
-        existant.setNumPermis(client.getNumPermis());
-        existant.setDateInscription(client.getDateInscription());
+        existant.setNom(dto.nom());
+        existant.setPrenom(dto.prenom());
+        existant.setEmail(dto.email());
+        existant.setTelephone(dto.telephone());
+        existant.setNumPermis(dto.numPermis());
+        existant.setDateInscription(dto.dateInscription());
 
-        return clientRepository.save(existant);
+        Client updated = clientRepository.save(existant);
+
+        return clientMapper.toDTO(updated);
     }
 
     @Override
     public void deleteById(Long id) {
+
         if (!clientRepository.existsById(id)) {
             throw new ResourceNotFoundException("Client", id);
         }
 
         clientRepository.deleteById(id);
-    }
-
-    private void verifierClient(Client client) {
-        if (client.getNom() == null || client.getNom().isBlank()) {
-            throw new IllegalArgumentException(
-                    "Le nom du client est obligatoire");
-        }
-
-        if (client.getPrenom() == null || client.getPrenom().isBlank()) {
-            throw new IllegalArgumentException(
-                    "Le prénom du client est obligatoire");
-        }
-
-        if (client.getEmail() == null || client.getEmail().isBlank()) {
-            throw new IllegalArgumentException(
-                    "L'email du client est obligatoire");
-        }
-
-        if (client.getTelephone() == null
-                || client.getTelephone().isBlank()) {
-            throw new IllegalArgumentException(
-                    "Le téléphone du client est obligatoire");
-        }
-
-        if (client.getNumPermis() == null) {
-            throw new IllegalArgumentException(
-                    "Le numéro de permis est obligatoire");
-        }
     }
 }

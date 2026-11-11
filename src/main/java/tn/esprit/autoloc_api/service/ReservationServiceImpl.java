@@ -1,10 +1,16 @@
+
 package tn.esprit.autoloc_api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.esprit.autoloc_api.domain.Reservation;
+import org.springframework.transaction.annotation.Transactional;
+
+import tn.esprit.autoloc_api.domain.*;
 import tn.esprit.autoloc_api.exception.ResourceNotFoundException;
-import tn.esprit.autoloc_api.repository.IReservationRepository;
+import tn.esprit.autoloc_api.mapper.ReservationMapper;
+import tn.esprit.autoloc_api.repository.*;
+import tn.esprit.autoloc_api.web.dto.ReservationRequestDTO;
+import tn.esprit.autoloc_api.web.dto.ReservationResponseDTO;
 
 import java.util.List;
 
@@ -13,48 +19,73 @@ import java.util.List;
 public class ReservationServiceImpl implements IReservationService {
 
     private final IReservationRepository reservationRepository;
+    private final IClientRepository clientRepository;
+    private final IVehiculeRepository vehiculeRepository;
+    private final IContratRepository contratRepository;
+    private final ReservationMapper reservationMapper;
 
     @Override
-    public Reservation create(Reservation reservation) {
-        if (reservation.getIdReservation() != null) {
-            throw new IllegalArgumentException(
-                    "Une nouvelle réservation ne doit pas avoir d'identifiant");
-        }
+    @Transactional
+    public ReservationResponseDTO create(ReservationRequestDTO dto) {
 
-        verifierReservation(reservation);
+        verifierDates(dto);
 
-        return reservationRepository.save(reservation);
+        Reservation reservation = reservationMapper.toEntity(dto);
+
+        reservation.setClient(trouverClient(dto.idClient()));
+        reservation.setVehicule(trouverVehicule(dto.idVehicule()));
+        reservation.setContrat(trouverContrat(dto.idContrat()));
+
+        Reservation saved = reservationRepository.save(reservation);
+
+        return reservationMapper.toDTO(saved);
     }
 
     @Override
-    public Reservation findById(Long id) {
-        return reservationRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Réservation", id));
+    @Transactional(readOnly = true)
+    public ReservationResponseDTO findById(Long id) {
+
+        Reservation reservation = rechercherReservation(id);
+
+        return reservationMapper.toDTO(reservation);
     }
 
     @Override
-    public List<Reservation> findAll() {
-        return reservationRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<ReservationResponseDTO> findAll() {
+
+        return reservationRepository.findAll()
+                .stream()
+                .map(reservationMapper::toDTO)
+                .toList();
     }
 
     @Override
-    public Reservation update(Long id, Reservation reservation) {
-        Reservation existante = findById(id);
+    @Transactional
+    public ReservationResponseDTO update(
+            Long id, ReservationRequestDTO dto) {
 
-        verifierReservation(reservation);
+        Reservation existante = rechercherReservation(id);
 
-        existante.setDateDebut(reservation.getDateDebut());
-        existante.setDateFin(reservation.getDateFin());
-        existante.setStatut(reservation.getStatut());
-        existante.setClient(reservation.getClient());
-        existante.setVehicule(reservation.getVehicule());
+        verifierDates(dto);
 
-        return reservationRepository.save(existante);
+        existante.setDateDebut(dto.dateDebut());
+        existante.setDateFin(dto.dateFin());
+        existante.setStatut(dto.statut());
+
+        existante.setClient(trouverClient(dto.idClient()));
+        existante.setVehicule(trouverVehicule(dto.idVehicule()));
+
+        // Le contrat reste inchangé, comme dans l'Atelier 5.
+
+        Reservation updated = reservationRepository.save(existante);
+
+        return reservationMapper.toDTO(updated);
     }
 
     @Override
     public void deleteById(Long id) {
+
         if (!reservationRepository.existsById(id)) {
             throw new ResourceNotFoundException("Réservation", id);
         }
@@ -62,18 +93,62 @@ public class ReservationServiceImpl implements IReservationService {
         reservationRepository.deleteById(id);
     }
 
-    private void verifierReservation(Reservation reservation) {
-        if (reservation.getDateDebut() == null
-                || reservation.getDateFin() == null) {
-            throw new IllegalArgumentException(
-                    "Les dates de début et de fin sont obligatoires");
+    private Reservation rechercherReservation(Long id) {
+
+        return reservationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Réservation", id)
+                );
+    }
+
+    private Client trouverClient(Long idClient) {
+
+        if (idClient == null) {
+            return null;
         }
 
-        if (reservation.getDateFin()
-                .isBefore(reservation.getDateDebut())) {
+        return clientRepository.findById(idClient)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client", idClient)
+                );
+    }
 
+    private Vehicule trouverVehicule(Long idVehicule) {
+
+        if (idVehicule == null) {
+            return null;
+        }
+
+        return vehiculeRepository.findById(idVehicule)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Véhicule", idVehicule)
+                );
+    }
+
+    private Contrat trouverContrat(Long idContrat) {
+
+        if (idContrat == null) {
+            return null;
+        }
+
+        return contratRepository.findById(idContrat)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Contrat", idContrat)
+                );
+    }
+
+    private void verifierDates(ReservationRequestDTO dto) {
+
+        if (dto.dateDebut() == null || dto.dateFin() == null) {
             throw new IllegalArgumentException(
-                    "La date de fin ne peut pas être antérieure à la date de début");
+                    "Les dates de début et de fin sont obligatoires"
+            );
+        }
+
+        if (dto.dateFin().isBefore(dto.dateDebut())) {
+            throw new IllegalArgumentException(
+                    "La date de fin ne peut pas être antérieure à la date de début"
+            );
         }
     }
 }
