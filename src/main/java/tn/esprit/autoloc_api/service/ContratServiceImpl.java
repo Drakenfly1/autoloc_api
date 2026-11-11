@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import tn.esprit.autoloc_api.domain.Contrat;
-import tn.esprit.autoloc_api.dto.ContratRequestDTO;
-import tn.esprit.autoloc_api.dto.ContratResponseDTO;
+import tn.esprit.autoloc_api.web.dto.ContratRequestDTO;
+import tn.esprit.autoloc_api.web.dto.ContratResponseDTO;
 import tn.esprit.autoloc_api.exception.ResourceNotFoundException;
 import tn.esprit.autoloc_api.mapper.ContratMapper;
 import tn.esprit.autoloc_api.repository.IContratRepository;

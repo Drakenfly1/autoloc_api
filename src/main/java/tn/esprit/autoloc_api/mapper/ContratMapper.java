@@ -3,8 +3,8 @@ package tn.esprit.autoloc_api.mapper;
 
 import org.springframework.stereotype.Component;
 import tn.esprit.autoloc_api.domain.Contrat;
-import tn.esprit.autoloc_api.dto.ContratRequestDTO;
-import tn.esprit.autoloc_api.dto.ContratResponseDTO;
+import tn.esprit.autoloc_api.web.dto.ContratRequestDTO;
+import tn.esprit.autoloc_api.web.dto.ContratResponseDTO;
 
 @Component
 public class ContratMapper {

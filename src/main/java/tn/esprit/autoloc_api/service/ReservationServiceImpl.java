@@ -76,8 +76,6 @@ public class ReservationServiceImpl implements IReservationService {
         existante.setClient(trouverClient(dto.idClient()));
         existante.setVehicule(trouverVehicule(dto.idVehicule()));
 
-        // Le contrat reste inchangé, comme dans l'Atelier 5.
-
         Reservation updated = reservationRepository.save(existante);
 
         return reservationMapper.toDTO(updated);
