@@ -7,9 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import tn.esprit.autoloc_api.service.IContratService;
+import tn.esprit.autoloc_api.web.dto.ContratDTO;
 import tn.esprit.autoloc_api.web.dto.ContratRequestDTO;
 import tn.esprit.autoloc_api.web.dto.ContratResponseDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -18,6 +20,22 @@ import java.util.List;
 public class ContratController {
 
     private final IContratService contratService;
+
+
+    @PostMapping("/affecter-reservation")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ContratDTO affecterReservation(
+            @RequestParam LocalDate dateSignature,
+            @RequestParam LocalDate dateDebut,
+            @RequestParam LocalDate dateFin) {
+
+        return contratService.affecterContratAReservation(
+                dateSignature,
+                dateDebut,
+                dateFin
+        );
+    }
+
 
     // GET : récupérer tous les contrats
     @GetMapping
