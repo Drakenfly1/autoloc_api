@@ -28,6 +28,23 @@ public class VehiculeMapper {
         );
     }
 
+
+    public VehiculeResponseDTO toVehiculeDTO(Vehicule vehicule) {
+        VehiculeResponseDTO dto = toDTO(vehicule);
+
+        return new VehiculeResponseDTO(
+                dto.idVehicule(),
+                dto.immatriculation(),
+                dto.marque(),
+                dto.modele(),
+                dto.categorie(),
+                dto.tarifJournalier(),
+                dto.statut(),
+                dto.idAgence()
+        );
+    }
+
+
     public Vehicule toEntity(VehiculeRequestDTO dto) {
 
         Vehicule vehicule = new Vehicule();

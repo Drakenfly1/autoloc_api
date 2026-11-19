@@ -11,6 +11,9 @@ import tn.esprit.autoloc_api.mapper.ReservationMapper;
 import tn.esprit.autoloc_api.repository.*;
 import tn.esprit.autoloc_api.web.dto.ReservationRequestDTO;
 import tn.esprit.autoloc_api.web.dto.ReservationResponseDTO;
+import tn.esprit.autoloc_api.web.dto.ReservationWithContratRequestDTO;
+import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 
 import java.util.List;
 
@@ -149,4 +152,100 @@ public class ReservationServiceImpl implements IReservationService {
             );
         }
     }
+
+    @Override
+    @Transactional
+    public ReservationResponseDTO affecterReservationAClient(
+            Long idReservation, String nom, String prenom) {
+
+        // 1. Récupérer la réservation
+        Reservation reservation = reservationRepository
+                .findById(idReservation)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Réservation", idReservation));
+
+        // 2. Rechercher le client
+        List<Client> clients = clientRepository
+                .findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
+
+        if (clients.size() != 1) {
+            throw new IllegalArgumentException(
+                    "Aucun client unique trouvé pour ce nom et prénom");
+        }
+
+        // 3. Affecter
+        reservation.setClient(clients.get(0));
+
+        // 4. Enregistrer
+        Reservation saved = reservationRepository.save(reservation);
+
+        // 5. Retourner un DTO
+        return reservationMapper.toDTO(saved);
+    }
+
+
+    @Override
+    @Transactional
+    public ReservationResponseDTO creerReservationEtContratAssocie(
+            ReservationWithContratRequestDTO requestDTO) {
+
+        // 1. Vérifier les données
+        if (requestDTO.dateDebut() == null
+                || requestDTO.dateFin() == null
+                || requestDTO.dateSignature() == null
+                || requestDTO.statut() == null
+                || requestDTO.dateFin().isBefore(requestDTO.dateDebut())) {
+            throw new IllegalArgumentException(
+                    "Données de réservation invalides");
+        }
+
+        // 2. Récupérer les entités existantes
+        Client client = clientRepository
+                .findById(requestDTO.idClient())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Client", requestDTO.idClient()));
+
+        Vehicule vehicule = vehiculeRepository
+                .findById(requestDTO.idVehicule())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Véhicule", requestDTO.idVehicule()));
+
+        // 3. Calculer le montant du contrat
+        long jours = ChronoUnit.DAYS.between(
+                requestDTO.dateDebut(),
+                requestDTO.dateFin()) + 1;
+
+        BigDecimal montant = vehicule.getTarifJournalier()
+                .multiply(BigDecimal.valueOf(jours));
+
+        // 4. Créer et enregistrer le contrat
+        Contrat contrat = new Contrat();
+        contrat.setDateSignature(requestDTO.dateSignature());
+        contrat.setMontantTotal(montant);
+        contrat.setValide(false);
+
+        Contrat savedContrat = contratRepository.save(contrat);
+
+        // 5. Créer la réservation
+        Reservation reservation = new Reservation();
+        reservation.setDateDebut(requestDTO.dateDebut());
+        reservation.setDateFin(requestDTO.dateFin());
+        reservation.setStatut(requestDTO.statut());
+
+        // 6. Effectuer les affectations
+        reservation.setClient(client);
+        reservation.setVehicule(vehicule);
+        reservation.setContrat(savedContrat);
+
+        // 7. Enregistrer la réservation
+        Reservation saved = reservationRepository.save(reservation);
+
+        // 8. Retourner le DTO
+        return reservationMapper.toDTO(saved);
+    }
+
+
 }

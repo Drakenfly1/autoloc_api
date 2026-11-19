@@ -5,9 +5,22 @@ import org.springframework.stereotype.Component;
 import tn.esprit.autoloc_api.domain.Contrat;
 import tn.esprit.autoloc_api.web.dto.ContratRequestDTO;
 import tn.esprit.autoloc_api.web.dto.ContratResponseDTO;
-
+import tn.esprit.autoloc_api.web.dto.ContratDTO;
 @Component
 public class ContratMapper {
+
+
+    public ContratDTO toContratDTO(Contrat contrat) {
+        ContratResponseDTO dto = toDTO(contrat);
+
+        return new ContratDTO(
+                contrat.getIdContrat(),
+                contrat.getDateSignature(),
+                contrat.getMontantTotal(),
+                contrat.getValide()
+        );
+    }
+
 
     // Entité vers DTO : réponse au client
     public ContratResponseDTO toDTO(Contrat contrat) {

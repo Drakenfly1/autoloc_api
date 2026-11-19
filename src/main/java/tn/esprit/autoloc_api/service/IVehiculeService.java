@@ -16,5 +16,15 @@ public interface IVehiculeService {
 
     VehiculeResponseDTO update(Long id, VehiculeRequestDTO dto);
 
+    VehiculeResponseDTO affecterVehiculeAEquipement(
+            Long idVehicule,
+            Long idEquipement
+    );
+
+    VehiculeResponseDTO affecterMaintenanceAvehicule(
+            String description,
+            String immatriculation
+    );
+
     void deleteById(Long id);
 }

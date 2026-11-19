@@ -13,7 +13,12 @@ import tn.esprit.autoloc_api.repository.IAgenceRepository;
 import tn.esprit.autoloc_api.repository.IVehiculeRepository;
 import tn.esprit.autoloc_api.web.dto.VehiculeRequestDTO;
 import tn.esprit.autoloc_api.web.dto.VehiculeResponseDTO;
-
+import tn.esprit.autoloc_api.domain.Equipement;
+import tn.esprit.autoloc_api.repository.IEquipementRepository;
+import tn.esprit.autoloc_api.domain.Maintenance;
+import tn.esprit.autoloc_api.repository.IMaintenanceRepositorty;
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -23,6 +28,8 @@ public class VehiculeServiceImpl implements IVehiculeService {
     private final IVehiculeRepository vehiculeRepository;
     private final IAgenceRepository agenceRepository;
     private final VehiculeMapper vehiculeMapper;
+    private final IEquipementRepository equipementRepository;
+    private final IMaintenanceRepositorty maintenanceRepository;
 
     @Override
     @Transactional
@@ -105,4 +112,76 @@ public class VehiculeServiceImpl implements IVehiculeService {
                     new ResourceNotFoundException("Agence", idAgence)
                 );
     }
+
+
+    @Override
+    @Transactional
+    public VehiculeResponseDTO affecterVehiculeAEquipement(
+            Long idVehicule, Long idEquipement) {
+
+        // 1. Récupérer le véhicule
+        Vehicule vehicule = vehiculeRepository
+                .findById(idVehicule)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Véhicule", idVehicule));
+
+        // 2. Récupérer l'équipement
+        Equipement equipement = equipementRepository
+                .findById(idEquipement)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Équipement", idEquipement));
+
+        // 3. Initialiser la collection si nécessaire
+        if (vehicule.getEquipements() == null) {
+            vehicule.setEquipements(new HashSet<>());
+        }
+
+        // 4. Affecter l'équipement
+        vehicule.getEquipements().add(equipement);
+
+        // 5. Enregistrer
+        Vehicule saved = vehiculeRepository.save(vehicule);
+
+        // 6. Retourner un DTO
+        return vehiculeMapper.toVehiculeDTO(saved);
+    }
+
+
+    @Override
+    @Transactional
+    public VehiculeResponseDTO affecterMaintenanceAvehicule(
+            String description, String immatriculation) {
+
+        // 1. Vérifier la description
+        if (description == null || description.isBlank()
+                || description.length() > 500) {
+            throw new IllegalArgumentException(
+                    "Description de maintenance invalide");
+        }
+
+        // 2. Récupérer le véhicule
+        Vehicule vehicule = vehiculeRepository
+                .findByImmatriculation(immatriculation)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Véhicule introuvable"));
+
+        // 3. Créer la maintenance
+        Maintenance maintenance = new Maintenance();
+        maintenance.setDescription(description);
+        maintenance.setDateDebut(LocalDate.now());
+
+        // 4. Affecter le véhicule
+        maintenance.setVehicule(vehicule);
+
+        // 5. Enregistrer la maintenance
+        maintenanceRepository.save(maintenance);
+
+        // 6. Retourner le DTO du véhicule
+        return vehiculeMapper.toVehiculeDTO(vehicule);
+    }
+
+
 }
